@@ -1,0 +1,124 @@
+
+================================================================================
+       RELATÓRIO TÉCNICO GERAL - APP FEDERAÇÃO NORTE DE PESCA ESPORTIVA
+================================================================================
+
+1. ARQUITETURA DO SISTEMA
+--------------------------------------------------------------------------------
+O App FNPE é uma plataforma de gestão federativa construída com:
+- Frontend: React 19 (Vite) + Tailwind CSS + Lucide Icons.
+- Backend (BaaS): Supabase (PostgreSQL + Auth + Storage).
+- Inteligência Artificial: Google Gemini 2.0 (Assistente IA).
+- Sincronização: Híbrida (Supabase Cloud + LocalStorage Fallback).
+
+2. NÍVEIS DE ACESSO (PERFIS DE USUÁRIO)
+--------------------------------------------------------------------------------
+O sistema opera em três camadas de autoridade:
+
+A. PESCADOR (Nível Base):
+   - Perfil criado no primeiro acesso.
+   - Pode consultar rankings e eventos.
+   - Pode solicitar a ID Norte.
+   - Status de ID Norte: "NÃO SOLICITADO" ou "PENDENTE".
+
+B. ATLETA (Filiado):
+   - Usuário que teve a ID Norte aprovada pela Federação.
+   - Possui número de registro oficial (ID-00000).
+   - Pontua nos rankings estaduais através de eventos certificados.
+   - Tem acesso à carteirinha digital com QR Code.
+
+C. ADMIN (Gestor):
+   - Poder total sobre a plataforma.
+   - Aprova/Reprova solicitações de ID Norte e Certificações de Eventos.
+   - Lança resultados de torneios.
+   - Edita configurações globais (capas de rankings, nomes, etc).
+   - Comunicação em massa com a base de usuários.
+
+3. ESTRUTURA DE BANCO DE DADOS (TABELAS)
+--------------------------------------------------------------------------------
+
+Tabela: ATLETAS (public.atletas)
+- id (UUID): PK vinculada ao Auth do Supabase.
+- email (TEXT): Único, identificador de login.
+- nome_completo (TEXT): Nome oficial do filiado.
+- cpf (TEXT): Documento validado (Módulo 11).
+- telefone/cidade/uf (TEXT): Dados de localização.
+- foto_url (TEXT): Link da imagem de perfil no Storage.
+- nivel (TEXT): 'ADMIN', 'ATLETA' ou 'PESCADOR'.
+- id_norte_status (TEXT): Status do processo de filiação.
+- id_norte_numero (TEXT): Matrícula oficial.
+- id_norte_validade (TIMESTAMPTZ): Data de expiração da filiação.
+
+Tabela: EVENTOS (public.eventos)
+- id (UUID): PK.
+- nome_evento (TEXT): Título do torneio.
+- instituicao_organizadora (TEXT): Entidade responsável.
+- cidade/uf (TEXT): Onde ocorre o evento.
+- tem_caiaque/tem_embarcado... (BOOLEAN): Categorias disponíveis.
+- logo_url (TEXT): Identidade visual do evento.
+
+Tabela: RESULTADOS (public.resultados)
+- evento_id (UUID): FK -> eventos.id.
+- atleta_id (UUID): FK -> atletas.id.
+- categoria (TEXT): CAIAQUE, EMBARCADO, etc.
+- pontuacao (NUMERIC): Pontos ou soma em cm.
+- colocacao (INT): Posição final no evento.
+
+Tabela: CONFIGURACOES (public.configuracoes)
+- id (TEXT): PK 'global'.
+- nome_do_aplicativo (TEXT): Branding dinâmico.
+- rankings_covers (JSONB): Mapeamento de imagens por UF.
+
+4. FLUXO DE LOGIN E SEGURANÇA (OTP)
+--------------------------------------------------------------------------------
+O sistema utiliza login sem senha (Passwordless):
+1. O usuário insere o E-mail.
+2. O Supabase envia um código de 6 dígitos (OTP) para o e-mail.
+3. O usuário insere o código no app.
+4. Se o e-mail já existe na tabela 'atletas', o login é concluído.
+5. Se é novo, o app redireciona para "Completar Perfil".
+6. Recuperação: Se o usuário perdeu o acesso ao e-mail, ele pode iniciar a
+   recuperação via CPF, que exibe o e-mail mascarado e permite suporte manual.
+
+5. MÓDULOS E FUNCIONALIDADES DAS TELAS
+--------------------------------------------------------------------------------
+
+Módulo: ID NORTE (Identidade Digital)
+- Função: Gerar o documento oficial do atleta.
+- Reação: Ao ser aprovado, o sistema gera um QR Code único que aponta para 
+  uma página de consulta pública, permitindo que fiscais validem a filiação.
+
+Módulo: EVENTOS CERTIFICADOS
+- Função: Listar torneios oficiais.
+- Fluxo Admin: Pode criar eventos diretamente ou aprovar solicitações.
+- Fluxo Usuário: Pode visualizar detalhes e baixar regulamentos.
+
+Módulo: RANKINGS ESTADUAIS
+- Função: Motor de cálculo que soma pontuações de múltiplos eventos.
+- Reação: Filtra por UF e Categoria, gerando a classificação geral da região.
+
+Módulo: ASSISTENTE IA (Gemini)
+- Função: Chatbot integrado para suporte.
+- Reação: Responde dúvidas sobre regulamentos da FNPE e ajuda admins a 
+  escreverem notificações profissionais.
+
+6. REGRAS DE NEGÓCIO E SINCRONIZAÇÃO
+--------------------------------------------------------------------------------
+- Validação de CPF: O app impede cadastros duplicados ou CPFs matematicamente inválidos.
+- RLS (Row Level Security): No Supabase, um pescador não pode alterar dados de 
+  outro pescador. Somente o próprio usuário ou o Admin tem permissão de escrita.
+- Filiação Anual: O sistema calcula automaticamente a validade da ID Norte 
+  para 1 ano após a data de aprovação.
+- Pontuação de Ranking: A posição no ranking é dinâmica, baseada na soma 
+  decrescente da coluna 'pontuacao' na tabela de resultados.
+
+7. ARMAZENAMENTO DE MÍDIA (STORAGE)
+--------------------------------------------------------------------------------
+- Bucket 'midia': Armazena fotos de perfil, logos de eventos e comprovantes.
+- Sanitização: Todo upload renomeia o arquivo para evitar caracteres especiais 
+  que quebram a URL final.
+- Redimensionamento: O app sugere limites de 1.5MB para garantir performance.
+
+================================================================================
+                               FIM DO RELATÓRIO
+================================================================================

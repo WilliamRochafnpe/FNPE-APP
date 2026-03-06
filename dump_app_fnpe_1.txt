@@ -1,0 +1,332 @@
+===== PROJECT TREE =====
+/
+├── index.html
+├── index.tsx
+├── metadata.json
+├── App.tsx
+├── types.ts
+├── db.ts
+├── geminiService.ts
+├── components/
+│   ├── Layout.tsx
+│   ├── AssistantModal.tsx
+│   ├── AthleteProfileModal.tsx
+│   ├── EventFormModal.tsx
+│   ├── IdNorteCard.tsx
+│   ├── StateCitySelect.tsx
+│   └── BackupRestorePanel.tsx
+├── pages/
+│   ├── Login.tsx
+│   ├── Dashboard.tsx
+│   ├── Events.tsx
+│   ├── EventDetails.tsx
+│   ├── Rankings.tsx
+│   ├── Athletes.tsx
+│   ├── IdNorte.tsx
+│   ├── Admin.tsx
+│   ├── Profile.tsx
+│   ├── AdminCommunication.tsx
+│   ├── AdminDashboard.tsx
+│   ├── RankingEstado.tsx
+│   ├── AuthEmail.tsx
+│   ├── AuthCode.tsx
+│   ├── AuthCompleteProfile.tsx
+│   ├── AuthRecover.tsx
+│   ├── CertificationRequestForm.tsx
+│   ├── AdminCertificationRequests.tsx
+│   └── ConsultarIdNorte.tsx
+├── services/
+│   ├── auth/
+│   │   ├── types.ts
+│   │   ├── localAuth.ts
+│   │   ├── firebaseAuth.ts
+│   │   ├── supabaseAuth.ts
+│   │   └── index.ts
+│   └── recovery.ts
+├── hooks/
+│   └── useAuth.ts
+├── utils/
+│   ├── report.ts
+│   ├── cpf.ts
+│   └── maskEmail.ts
+├── data/
+│   ├── geoBrasil.ts
+│   └── municipiosPorUf.ts
+└── lib/
+    └── supabase.ts
+
+===== FILE: index.html =====
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNPE - Federação Norte de Pesca Esportiva</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #020617; /* slate-950 */
+      --surface: #0f172a; /* slate-900 */
+      --surface-2: #1e293b; /* slate-800 */
+      --border: #334155; /* slate-700 */
+      --text: #f1f5f9; /* slate-100 */
+      --muted: #94a3b8; /* slate-400 */
+      --accent: #10b981; /* emerald-500 */
+      --accent-hover: #34d399; /* emerald-400 */
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    .theme-card { background-color: var(--surface); border: 1px solid var(--border); }
+    .theme-border { border-color: var(--border); }
+    .theme-input { background-color: var(--surface); border-color: var(--border); color: var(--text); }
+    .theme-input:focus { border-color: var(--accent); ring-color: rgba(16, 185, 129, 0.2); }
+    
+    /* Layout Centered Transitions */
+    .fade-enter { opacity: 0; transform: translateY(10px); }
+    .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 300ms ease-out; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1?deps=react@19.0.0,react-dom@19.0.0",
+    "recharts": "https://esm.sh/recharts@2.15.0?deps=react@19.0.0,react-dom@19.0.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.469.0?deps=react@19.0.0",
+    "qrcode": "https://esm.sh/qrcode@1.5.4",
+    "@google/genai": "https://esm.sh/@google/genai@1.3.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.48.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body class="selection:bg-emerald-500/30 selection:text-emerald-200">
+  <div id="root"></div>
+</body>
+</html>
+===== END FILE =====
+
+===== FILE: index.tsx =====
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+===== END FILE =====
+
+===== FILE: App.tsx =====
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { loadDB, saveDB, ADMIN_EMAIL, ensureAdminUser } from './db';
+import { DB, User } from './types';
+import { supabase } from './lib/supabase';
+import { auth as authProvider, IS_SUPABASE } from './services/auth';
+
+import Login from './pages/Login';
+import AuthEmail from './pages/AuthEmail';
+import AuthCode from './pages/AuthCode';
+import AuthCompleteProfile from './pages/AuthCompleteProfile';
+import AuthRecover from './pages/AuthRecover';
+import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
+import Rankings from './pages/Rankings';
+import RankingEstado from './pages/RankingEstado';
+import Athletes from './pages/Athletes';
+import Admin from './pages/Admin';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminCommunication from './pages/AdminCommunication';
+import AdminCertificationRequests from './pages/AdminCertificationRequests';
+import IdNortePage from './pages/IdNorte';
+import ConsultarIdNorte from './pages/ConsultarIdNorte';
+import Profile from './pages/Profile';
+import CertificationRequestForm from './pages/CertificationRequestForm';
+import Layout from './components/Layout';
+
+interface AppContextType {
+  db: DB;
+  setDb: React.Dispatch<React.SetStateAction<DB>>;
+  user: User | null;
+  setUser: (u: User | null) => void;
+  logout: () => void;
+}
+
+export const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error("useApp must be used within AppProvider");
+  return context;
+};
+
+const App: React.FC = () => {
+  const [db, setDb] = useState<DB>(() => loadDB());
+  const [user, setUser] = useState<User | null>(null);
+  const [initializing, setInitializing] = useState(true);
+
+  // Efeito de inicialização e escuta do Supabase
+  useEffect(() => {
+    const initializeAuth = async () => {
+      if (IS_SUPABASE) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          const profile = await authProvider.findUserByEmail(db, session.user.email);
+          setUser(profile);
+        }
+      } else {
+        const saved = localStorage.getItem('fnpe_session');
+        if (saved) {
+          try {
+            setUser(JSON.parse(saved));
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      setInitializing(false);
+    };
+
+    initializeAuth();
+
+    if (IS_SUPABASE) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user?.email) {
+          const profile = await authProvider.findUserByEmail(db, session.user.email);
+          setUser(profile);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  // Persistência local do DB
+  useEffect(() => {
+    const updatedDb = ensureAdminUser(db);
+    saveDB(updatedDb);
+  }, [db]);
+
+  const handleSetUser = (u: User | null) => {
+    if (u && u.email && u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      u.nivel = 'ADMIN';
+    }
+    setUser(u);
+    if (!IS_SUPABASE) {
+      if (u) localStorage.setItem('fnpe_session', JSON.stringify(u));
+      else localStorage.removeItem('fnpe_session');
+    }
+  };
+
+  const logout = async () => {
+    if (IS_SUPABASE) {
+      await supabase.auth.signOut();
+    }
+    handleSetUser(null);
+  };
+
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <AppContext.Provider value={{ db, setDb, user, setUser: handleSetUser, logout }}>
+      <HashRouter>
+        <Routes>
+          <Route path="/login" element={user ? <Navigate to="/app" replace /> : <Login />} />
+          <Route path="/login/email" element={<AuthEmail />} />
+          <Route path="/login/codigo" element={<AuthCode />} />
+          <Route path="/login/perfil" element={<AuthCompleteProfile />} />
+          <Route path="/login/recuperar" element={<AuthRecover />} />
+          <Route path="/app/*" element={user ? <AppRoutes /> : <Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/app" replace />} />
+        </Routes>
+      </HashRouter>
+    </AppContext.Provider>
+  );
+};
+
+const AppRoutes = () => {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/eventos" element={<Events />} />
+        <Route path="/eventos/:id" element={<EventDetails />} />
+        <Route path="/solicitar-certificacao" element={<CertificationRequestForm />} />
+        <Route path="/ranking-estadual" element={<Rankings />} />
+        <Route path="/ranking-estadual/:uf" element={<RankingEstado />} />
+        <Route path="/atletas" element={<Athletes />} />
+        <Route path="/admin" element={<AdminGate><Admin /></AdminGate>} />
+        <Route path="/admin-dashboard" element={<AdminGate><AdminDashboard /></AdminGate>} />
+        <Route path="/comunicacao" element={<AdminGate><AdminCommunication /></AdminGate>} />
+        <Route path="/admin/certificacoes" element={<AdminGate><AdminCertificationRequests /></AdminGate>} />
+        <Route path="/id-norte" element={<IdNortePage />} />
+        <Route path="/consultar-id-norte" element={<ConsultarIdNorte />} />
+        <Route path="/perfil" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
+      </Routes>
+    </Layout>
+  );
+};
+
+const AdminGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useApp();
+  if (user?.nivel !== 'ADMIN') return <Navigate to="/app" replace />;
+  return <>{children}</>;
+};
+
+export default App;
+===== END FILE =====
+
+===== FILE: metadata.json =====
+{
+  "name": "FNPE - Federação Norte de Pesca Esportiva",
+  "description": "Plataforma oficial para gestão de atletas, emissão de ID Norte, certificação de eventos e rankings de pesca esportiva na região Norte.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
+===== END FILE =====
+
+===== FILE: package.json =====
+NÃO ENCONTRADO
+===== END FILE =====
+
+===== FILE: tsconfig.json =====
+NÃO ENCONTRADO
+===== END FILE =====

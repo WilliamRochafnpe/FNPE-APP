@@ -1,0 +1,7 @@
+{
+  "name": "FNPE - Federação Norte de Pesca Esportiva",
+  "description": "Plataforma oficial para gestão de atletas, emissão de ID Norte, certificação de eventos e rankings de pesca esportiva na região Norte.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

@@ -1,0 +1,299 @@
+===== FILE: lib/supabase.ts =====
+import { createClient } from '@supabase/supabase-js';
+
+// Usando process.env conforme as diretrizes do ambiente
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn("Supabase URL ou Anon Key não configurados em process.env. O app funcionará em modo LOCAL.");
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder'
+);
+===== END FILE =====
+
+===== FILE: services/auth/index.ts =====
+import { localAuth } from './localAuth';
+import { supabaseAuth } from './supabaseAuth';
+import { AuthService } from './types';
+
+// Verifica se as chaves do Supabase estão presentes no process.env
+const hasSupabase = !!process.env.VITE_SUPABASE_URL && !!process.env.VITE_SUPABASE_ANON_KEY;
+const AUTH_MODE = hasSupabase ? 'SUPABASE' : 'LOCAL';
+
+export const auth: AuthService = AUTH_MODE === 'SUPABASE' ? supabaseAuth : localAuth;
+export const IS_LOCAL = AUTH_MODE === 'LOCAL';
+export const IS_SUPABASE = AUTH_MODE === 'SUPABASE';
+===== END FILE =====
+
+===== FILE: services/auth/supabaseAuth.ts =====
+import { supabase } from '../../lib/supabase';
+import { AuthService, AuthProfileData } from './types';
+import { User, DB } from '../../types';
+
+export const supabaseAuth: AuthService = {
+  async requestOtp(email: string): Promise<void> {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+  },
+
+  async verifyOtp(email: string, code: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  },
+
+  async findUserByEmail(_db: DB, email: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (error || !data) return null;
+
+    // Mapping snake_case from DB to camelCase for the app
+    return {
+      id: data.id,
+      email: data.email,
+      nomeCompleto: data.nome_completo,
+      nivel: data.nivel,
+      estado: data.estado,
+      cidade: data.cidade,
+      cpf: data.cpf,
+      telefone: data.telefone,
+      idNorteStatus: data.id_norte_status,
+      idNorteNumero: data.id_norte_numero,
+      idNortePdfLink: data.id_norte_pdf_link,
+      idNorteAdesao: data.id_norte_adesao,
+      idNorteValidade: data.id_norte_validade,
+      createdAt: data.created_at
+    };
+  },
+
+  async findUserByCpf(_db: DB, cpf: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('cpf', cpf)
+      .single();
+
+    if (error || !data) return null;
+    return data as any; // Map if needed
+  },
+
+  async createUserFromProfile(_db: DB, _setDb: any, profile: AuthProfileData): Promise<User> {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error("Usuário não autenticado no Supabase Auth");
+
+    const newProfile = {
+      id: authUser.id,
+      email: profile.email.toLowerCase(),
+      nome_completo: profile.nomeCompleto,
+      cpf: profile.cpf,
+      telefone: profile.telefone,
+      cidade: profile.cidade,
+      estado: profile.estado,
+      nivel: 'PESCADOR',
+      id_norte_status: 'NAO_SOLICITADO'
+    };
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(newProfile)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      email: data.email,
+      nomeCompleto: data.nome_completo,
+      nivel: data.nivel,
+      estado: data.estado,
+      cidade: data.cidade,
+      idNorteStatus: data.id_norte_status
+    } as any;
+  }
+};
+===== END FILE =====
+
+===== FILE: services/auth/localAuth.ts =====
+import { AuthService, AuthProfileData } from './types';
+import { User, DB } from '../../types';
+import { normalizeCpf } from '../../utils/cpf';
+
+const OTP_KEY = 'fnpe_otp_store';
+const OTP_EXPIRY_MINS = 5;
+const MAX_ATTEMPTS = 5;
+
+interface OtpData {
+  email: string;
+  code: string;
+  expiresAt: number;
+  attempts: number;
+}
+
+export const localAuth: AuthService = {
+  async requestOtp(email: string): Promise<string> {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const data: OtpData = {
+      email: email.toLowerCase(),
+      code,
+      expiresAt: Date.now() + OTP_EXPIRY_MINS * 60 * 1000,
+      attempts: 0
+    };
+    sessionStorage.setItem(OTP_KEY, JSON.stringify(data));
+    console.log(`[FNPE-DEV] OTP para ${email}: ${code}`);
+    return code;
+  },
+
+  async verifyOtp(email: string, code: string): Promise<{ success: boolean; error?: string }> {
+    const raw = sessionStorage.getItem(OTP_KEY);
+    if (!raw) return { success: false, error: 'Código não solicitado ou expirado.' };
+
+    const data: OtpData = JSON.parse(raw);
+    
+    if (data.email !== email.toLowerCase()) {
+      return { success: false, error: 'E-mail divergente da solicitação.' };
+    }
+
+    if (Date.now() > data.expiresAt) {
+      sessionStorage.removeItem(OTP_KEY);
+      return { success: false, error: 'O código expirou. Solicite um novo.' };
+    }
+
+    if (data.attempts >= MAX_ATTEMPTS) {
+      sessionStorage.removeItem(OTP_KEY);
+      return { success: false, error: 'Limite de tentativas excedido.' };
+    }
+
+    if (data.code !== code) {
+      data.attempts += 1;
+      sessionStorage.setItem(OTP_KEY, JSON.stringify(data));
+      return { success: false, error: `Código inválido. (${MAX_ATTEMPTS - data.attempts} tentativas restantes)` };
+    }
+
+    sessionStorage.removeItem(OTP_KEY);
+    return { success: true };
+  },
+
+  async findUserByEmail(db: DB, email: string): Promise<User | null> {
+    return db.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  },
+
+  async findUserByCpf(db: DB, cpf: string): Promise<User | null> {
+    const pureCpf = normalizeCpf(cpf);
+    return db.users.find(u => u.cpf && normalizeCpf(u.cpf) === pureCpf) || null;
+  },
+
+  async createUserFromProfile(db: DB, setDb: any, profile: AuthProfileData): Promise<User> {
+    const newUser: User = {
+      id: `user-${Date.now()}`,
+      email: profile.email.toLowerCase(),
+      nomeCompleto: profile.nomeCompleto,
+      cpf: normalizeCpf(profile.cpf),
+      telefone: profile.telefone,
+      cidade: profile.cidade,
+      estado: profile.estado,
+      nivel: 'PESCADOR',
+      id_norte_status: 'NAO_SOLICITADO',
+      createdAt: new Date().toISOString()
+    };
+
+    setDb((prev: DB) => ({
+      ...prev,
+      users: [...prev.users, newUser]
+    }));
+
+    return newUser;
+  }
+};
+===== END FILE =====
+
+===== FILE: services/auth/firebaseAuth.ts =====
+import { AuthService, AuthProfileData } from './types';
+import { User, DB } from '../../types';
+
+/**
+ * ADAPTADOR FIREBASE (PRONTO PARA IMPLEMENTAÇÃO FUTURA)
+ * 
+ * Este arquivo servirá como adapter para as funções reais do Firebase:
+ * - requestOtp -> Chamada para Cloud Function (Firebase Admin + Email API)
+ * - verifyOtp -> Comparação via Cloud Function (ou Firestore temporário)
+ * - findUserByEmail -> Query no Firestore: collection('users').where('email', '==', email)
+ * - findUserByCpf -> Query no Firestore: collection('users').where('cpf', '==', cpf)
+ */
+
+export const firebaseAuth: AuthService = {
+  async requestOtp(email: string): Promise<void> {
+    throw new Error("Modo FIREBASE não configurado. Adicione as chaves no .env e implemente o adapter.");
+  },
+
+  async verifyOtp(email: string, code: string): Promise<{ success: boolean; error?: string }> {
+    throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async findUserByEmail(db: DB, email: string): Promise<User | null> {
+    throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async findUserByCpf(db: DB, cpf: string): Promise<User | null> {
+    throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async createUserFromProfile(db: DB, setDb: any, profile: AuthProfileData): Promise<User> {
+    throw new Error("Modo FIREBASE não configurado.");
+  }
+};
+===== END FILE =====
+
+===== FILE: hooks/useAuth.ts =====
+import { useApp } from '../App';
+import { auth } from '../services/auth';
+import { AuthProfileData } from '../services/auth/types';
+import { User } from '../types';
+
+export const useAuth = () => {
+  const { db, setDb, setUser, user: currentUser, logout: appLogout } = useApp();
+
+  return {
+    currentUser,
+    requestOtp: (email: string) => auth.requestOtp(email),
+    verifyOtp: (email: string, code: string) => auth.verifyOtp(email, code),
+    findUserByEmail: (email: string) => auth.findUserByEmail(db, email),
+    findUserByCpf: (cpf: string) => auth.findUserByCpf(db, cpf),
+    
+    loginAs: (user: User) => {
+      setUser(user);
+    },
+
+    registerAndLogin: async (profile: AuthProfileData) => {
+      const newUser = await auth.createUserFromProfile(db, setDb, profile);
+      setUser(newUser);
+      return newUser;
+    },
+
+    logout: () => {
+      appLogout();
+    }
+  };
+};
+===== END FILE =====
+
+===== FILE: .env.local =====
+NÃO ENCONTRADO
+===== END FILE =====
