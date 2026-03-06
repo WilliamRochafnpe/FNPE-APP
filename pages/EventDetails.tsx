@@ -16,7 +16,7 @@ import ResultLaunchForm from '../components/results/ResultLaunchForm';
 const EventDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { db, setDb, user } = useApp();
+  const { db, setDb, user, isMaster } = useApp();
   const event = db.events.find(e => e.id === id);
 
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -66,7 +66,7 @@ const EventDetails: React.FC = () => {
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !event || !user || user.nivel !== 'ADMIN') return;
+    if (!file || !event || !user || !isMaster) return;
 
     if ((event.galeria?.length || 0) >= 30) {
       alert("Limite de 30 fotos atingido.");
@@ -96,7 +96,7 @@ const EventDetails: React.FC = () => {
   };
 
   const removeGalleryPhoto = async (photoUrl: string) => {
-    if (!event || !user || user.nivel !== 'ADMIN') return;
+    if (!event || !user || !isMaster) return;
     if (!confirm("Remover esta foto?")) return;
 
     try {
@@ -210,7 +210,7 @@ const EventDetails: React.FC = () => {
             <div className="pt-4 border-t border-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Descrição Econômica</h3>
-                {user?.nivel === 'ADMIN' && (
+                {isMaster && (
                   <button
                     onClick={() => {
                       const newDesc = prompt("Editar Descrição Econômica:", event.descricao_economica || "");
@@ -252,19 +252,19 @@ const EventDetails: React.FC = () => {
       </section>
 
       {/* Galeria de Fotos */}
-      {(event.galeria?.length || 0) > 0 || user?.nivel === 'ADMIN' ? (
+      {(event.galeria?.length || 0) > 0 || isMaster ? (
         <section className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-emerald-500" /> Galeria Oficial
             </h2>
-            {user?.nivel === 'ADMIN' && (
+            {isMaster && (
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{event.galeria?.length || 0}/30 Fotos</span>
             )}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {user?.nivel === 'ADMIN' && (event.galeria?.length || 0) < 30 && (
+            {isMaster && (event.galeria?.length || 0) < 30 && (
               <label className="aspect-square bg-slate-900 rounded-2xl border-2 border-dashed border-slate-800 hover:border-emerald-500 hover:bg-slate-800 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group">
                 {uploadingGallery ? <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> : <Plus className="w-8 h-8 text-slate-700 group-hover:text-emerald-500 transition-colors" />}
                 <span className="text-[9px] font-black uppercase text-slate-600 group-hover:text-emerald-500">Adicionar</span>
@@ -277,7 +277,7 @@ const EventDetails: React.FC = () => {
                 <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
                   <img src={url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 </div>
-                {user?.nivel === 'ADMIN' && (
+                {isMaster && (
                   <button
                     onClick={() => removeGalleryPhoto(url)}
                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
@@ -302,7 +302,7 @@ const EventDetails: React.FC = () => {
         <div className="p-6 md:p-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
             <h2 className="text-xl font-black text-white uppercase tracking-tight">Ranking: {activeTab}</h2>
-            {user?.nivel === 'ADMIN' && (
+            {isMaster && (
               <button onClick={() => setShowAddResult(true)} className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all">
                 <Plus className="w-4 h-4" /> Lançar Resultado
               </button>
@@ -329,7 +329,7 @@ const EventDetails: React.FC = () => {
                       <td className="py-5 px-4 text-right">
                         <div className="font-black text-lg text-white">{(team.score || 0).toLocaleString('pt-BR')}</div>
                       </td>
-                      {user?.nivel === 'ADMIN' && (
+                      {isMaster && (
                         <td className="py-5 px-4 w-24 text-right opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-2">
                           <button onClick={() => handleEditResult(team)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-indigo-400 transition-colors" title="Editar">
                             <FileText className="w-4 h-4" />

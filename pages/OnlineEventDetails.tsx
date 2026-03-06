@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase';
 const OnlineEventDetails: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useApp();
+    const { user, isMaster } = useApp();
     const [event, setEvent] = useState<EventCertified | null>(null);
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -161,7 +161,7 @@ const OnlineEventDetails: React.FC = () => {
                             <Medal className="w-5 h-5 text-indigo-500" />
                             Ranking: {activeTab}
                         </h2>
-                        {user?.nivel === 'ADMIN' && (
+                        {isMaster && (
                             <button
                                 onClick={handleAddResult}
                                 className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
@@ -191,7 +191,7 @@ const OnlineEventDetails: React.FC = () => {
                                             <td className="py-5 px-4 text-right">
                                                 <div className="font-black text-lg text-white">{(res.pontuacao || 0).toLocaleString('pt-BR')} PTS</div>
                                             </td>
-                                            {user?.nivel === 'ADMIN' && (
+                                            {isMaster && (
                                                 <td className="py-5 px-4 w-12 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => handleDeleteResult(res.id)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-red-500 transition-colors">
                                                         <Trash2 className="w-4 h-4" />

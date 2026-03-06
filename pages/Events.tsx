@@ -7,7 +7,7 @@ import { EventCertified } from '../types';
 import EventFormModal from '../components/EventFormModal';
 
 const Events: React.FC = () => {
-  const { db, setDb, user } = useApp();
+  const { db, setDb, user, isMaster } = useApp();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -145,7 +145,7 @@ const Events: React.FC = () => {
         ) : (
           displayEvents.map((event) => (
             <div key={event.id} className="relative group">
-              {user?.nivel === 'ADMIN' && (
+              {isMaster && (
                 <div className="absolute top-4 left-4 z-10 flex gap-2">
                   <button onClick={(e) => handleOpenEdit(e, event)} className="p-2 bg-slate-900/90 backdrop-blur-sm text-indigo-400 rounded-xl shadow-lg hover:bg-indigo-600 hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
                   <button onClick={(e) => handleDelete(e, event.id)} className="p-2 bg-slate-900/90 backdrop-blur-sm text-red-400 rounded-xl shadow-lg hover:bg-red-600 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>

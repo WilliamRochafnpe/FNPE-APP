@@ -8,7 +8,7 @@ import EventFormModal from '../components/EventFormModal';
 import { onlineRankingService } from '../services/onlineRankingService';
 
 const OnlineEvents: React.FC = () => {
-    const { user } = useApp();
+    const { user, isMaster } = useApp();
     const navigate = useNavigate();
     const [events, setEvents] = useState<EventCertified[]>([]);
     const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ const OnlineEvents: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
-                    {user?.nivel === 'ADMIN' && (
+                    {isMaster && (
                         <button
                             onClick={handleOpenCreate}
                             className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2"
@@ -138,7 +138,7 @@ const OnlineEvents: React.FC = () => {
                     ) : (
                         displayEvents.map((event) => (
                             <div key={event.id} className="relative group">
-                                {user?.nivel === 'ADMIN' && (
+                                {isMaster && (
                                     <div className="absolute top-4 left-4 z-10 flex gap-2">
                                         <button onClick={(e) => handleOpenEdit(e, event)} className="p-2 bg-slate-900/90 backdrop-blur-sm text-indigo-400 rounded-xl shadow-lg hover:bg-indigo-600 hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
                                         <button onClick={(e) => handleDelete(e, event.id)} className="p-2 bg-slate-900/90 backdrop-blur-sm text-red-400 rounded-xl shadow-lg hover:bg-red-600 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>

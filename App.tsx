@@ -42,6 +42,7 @@ interface AppContextType {
   user: User | null;
   setUser: (u: User | null) => void;
   logout: () => void;
+  isMaster: boolean;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -162,7 +163,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <AppContext.Provider value={{ db, setDb, user, setUser: handleSetUser, logout }}>
+    <AppContext.Provider value={{ db, setDb, user, setUser: handleSetUser, logout, isMaster: user?.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() }}>
       <HashRouter>
         <Routes>
           <Route path="/login" element={user?.nome_completo ? <Navigate to="/app" replace /> : <Login />} />

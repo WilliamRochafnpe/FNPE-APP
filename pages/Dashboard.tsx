@@ -5,7 +5,7 @@ import { useApp } from '../App';
 import IdNorteCard from '../components/IdNorteCard';
 
 const Dashboard: React.FC = () => {
-  const { db, user } = useApp();
+  const { db, user, isMaster } = useApp();
   const [showIdNorteWidget, setShowIdNorteWidget] = useState(false);
 
   const athleteScores = useMemo(() => {
@@ -41,6 +41,7 @@ const Dashboard: React.FC = () => {
   const COLORS = ['#10b981', '#4f46e5', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const getLevelLabel = (level?: string) => {
+    if (isMaster) return 'Master';
     const isFemale = user?.sexo === 'F' || user?.sexo === 'FEMININO' || user?.sexo === 'Feminino';
     if (level === 'ATLETA') return 'Atleta';
     if (level === 'ADMIN') return 'Admin';

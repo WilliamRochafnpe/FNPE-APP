@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User as UserIcon, Camera, Save, AlertCircle, MapPin, Loader2, CheckCircle, Heart, Calendar, Phone, Image as ImageIcon, Plus, Trash2, History, Lock, ChevronRight, X } from 'lucide-react';
+import { User as UserIcon, Camera, Save, AlertCircle, MapPin, Loader2, CheckCircle, Heart, Calendar, Phone, Image as ImageIcon, Plus, Trash2, History, Lock, ChevronRight, X, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../App';
 import { normalizeCpf, formatCpf, isCpfValid } from '../utils/cpf';
 import { uploadFile } from '../services/storage';
@@ -361,6 +361,7 @@ const ChangePasswordModal: React.FC<{ onClose: () => void, onSuccess: () => void
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const rules = {
     min: password.length >= 6,
@@ -406,20 +407,33 @@ const ChangePasswordModal: React.FC<{ onClose: () => void, onSuccess: () => void
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none font-bold"
-              placeholder="Nova Senha"
-            />
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none font-bold"
-              placeholder="Confirme a Senha"
-            />
+            <div className="relative group">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none font-bold pr-12"
+                placeholder="Nova Senha"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <div className="relative group">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none font-bold pr-12"
+                placeholder="Confirme a Senha"
+              />
+            </div>
           </div>
 
           <div className="bg-slate-950/50 p-4 rounded-xl space-y-2 border border-slate-800">
@@ -437,6 +451,9 @@ const ChangePasswordModal: React.FC<{ onClose: () => void, onSuccess: () => void
             </div>
             <div className={`flex items-center gap-2 text-xs font-bold ${rules.special ? 'text-emerald-400' : 'text-slate-600'}`}>
               <div className={`w-2 h-2 rounded-full ${rules.special ? 'bg-emerald-500' : 'bg-slate-700'}`} /> Especial (@$!%*?&#)
+            </div>
+            <div className={`flex items-center gap-2 text-xs font-bold ${rules.match ? 'text-emerald-400' : 'text-slate-600'}`}>
+              <div className={`w-2 h-2 rounded-full ${rules.match ? 'bg-emerald-500' : 'bg-slate-700'}`} /> As senhas coincidem
             </div>
           </div>
 

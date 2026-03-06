@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, Check, X, ShieldCheck } from 'lucide-react';
+import { Lock, Check, X, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { supabaseAuth } from '../../services/auth/supabaseAuth';
 import { useApp } from '../../App';
 
@@ -14,6 +14,7 @@ const SetPassword: React.FC<SetPasswordProps> = ({ onSuccess }) => {
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const rules = {
         min: password.length >= 6,
@@ -61,19 +62,27 @@ const SetPassword: React.FC<SetPasswordProps> = ({ onSuccess }) => {
                 <div className="space-y-4">
                     <div className="relative group">
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+                            className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none pr-12"
                             placeholder="Nova Senha"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
                     </div>
                     <div className="relative group">
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
-                            className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+                            className="block w-full px-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none pr-12"
                             placeholder="Confirme a Senha"
                         />
                     </div>

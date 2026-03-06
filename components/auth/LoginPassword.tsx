@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, ArrowRight, ArrowLeft, Mail } from 'lucide-react';
+import { Lock, ArrowRight, ArrowLeft, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { supabaseAuth } from '../../services/auth/supabaseAuth';
 
@@ -15,6 +15,7 @@ const LoginPassword: React.FC<LoginPasswordProps> = ({ onSuccess, onBack, onForg
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -92,13 +93,21 @@ const LoginPassword: React.FC<LoginPasswordProps> = ({ onSuccess, onBack, onForg
                             <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
                         </div>
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="block w-full pl-12 pr-4 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+                            className="block w-full pl-12 pr-12 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
                             placeholder="Sua senha"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
                     </div>
                 </div>
 
