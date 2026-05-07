@@ -4,7 +4,8 @@ import { User as UserIcon, Camera, Save, AlertCircle, MapPin, Loader2, CheckCirc
 import { useApp } from '../App';
 import { normalizeCpf, formatCpf, isCpfValid } from '../utils/cpf';
 import { uploadFile } from '../services/storage';
-import { syncDatabase, supabaseAuth } from '../services/auth/supabaseAuth';
+import { syncDatabase } from '../services/auth/supabaseAuth';
+import { auth } from '../services/auth';
 import { IS_SUPABASE } from '../services/auth';
 
 const formatPhone = (v: string) => {
@@ -381,10 +382,10 @@ const ChangePasswordModal: React.FC<{ onClose: () => void, onSuccess: () => void
     setError('');
 
     try {
-      await supabaseAuth.updatePassword(password);
+      await auth.updatePassword(password);
       // Also ensure password_defined is true if it wasn't
       const { data: { user } } = await import('../lib/supabase').then(m => m.supabase.auth.getUser());
-      if (user) await supabaseAuth.markPasswordDefined(user.id);
+      if (user) await auth.markPasswordDefined(user.id);
 
       onSuccess();
       onClose();

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, ArrowRight, Lock } from 'lucide-react';
-import { supabaseAuth } from '../../services/auth/supabaseAuth';
+import { auth } from '../../services/auth';
 
 interface LoginIdentifierProps {
     onSuccess: (email: string) => void;
@@ -20,14 +20,14 @@ const LoginIdentifier: React.FC<LoginIdentifierProps> = ({ onSuccess, onGoToPass
 
         try {
             // Check status first
-            const status = await supabaseAuth.checkUserStatus(email);
+            const status = await auth.checkUserStatus(email);
             if (status && status.password_defined) {
                 setError('Este e-mail já possui senha cadastrada. Por favor, entre usando sua senha.');
                 setLoading(false);
                 return;
             }
 
-            await supabaseAuth.requestOtp(email);
+            await auth.requestOtp(email);
             onSuccess(email);
         } catch (err: any) {
             setError(err.message || 'Erro ao enviar código.');

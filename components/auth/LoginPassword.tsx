@@ -2,7 +2,10 @@
 import React, { useState } from 'react';
 import { Lock, ArrowRight, ArrowLeft, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { supabaseAuth } from '../../services/auth/supabaseAuth';
+import { auth, IS_SUPABASE } from '../../services/auth';
+import { useAuth } from '../../hooks/useAuth';
+import { getLocalStoredPassword } from '../../services/auth/localAuth';
+import { loadDB } from '../../db';
 
 interface LoginPasswordProps {
     onSuccess: () => void;
@@ -11,6 +14,7 @@ interface LoginPasswordProps {
 }
 
 const LoginPassword: React.FC<LoginPasswordProps> = ({ onSuccess, onBack, onForgotPassword }) => {
+    const { loginAs } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -30,8 +34,7 @@ const LoginPassword: React.FC<LoginPasswordProps> = ({ onSuccess, onBack, onForg
         };
 
         try {
-            // Check status with timeout
-            const status = await withTimeout(supabaseAuth.checkUserStatus(email));
+            const status = await withTimeout(auth.checkUserStatus(email));
 
             if (status && !status.password_defined) {
                 setError('Este usuário ainda não definiu senha. Use a opção "Receber Código" na tela inicial.');
@@ -39,7 +42,18 @@ const LoginPassword: React.FC<LoginPasswordProps> = ({ onSuccess, onBack, onForg
                 return;
             }
 
-            // Sign in with timeout
+            if (!IS_SUPABASE) {
+                const db = loadDB();
+                const u = await auth.findUserByEmail(db, email.trim().toLowerCase());
+                const stored = getLocalStoredPassword(email.trim().toLowerCase());
+                if (!u || stored !== password) {
+                    throw new Error('Credenciais inválidas.');
+                }
+                loginAs(u);
+                onSuccess();
+                return;
+            }
+
             const { error } = await withTimeout(supabase.auth.signInWithPassword({
                 email: email.trim().toLowerCase(),
                 password

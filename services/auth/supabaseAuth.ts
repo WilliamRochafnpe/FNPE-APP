@@ -40,16 +40,33 @@ export function mapRowToUser(row: any): User {
 export const supabaseAuth: AuthService = {
   async requestOtp(email: string) {
     try {
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}${window.location.pathname || '/'}`
+          : undefined;
+
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
         options: {
-          shouldCreateUser: true // Garante que cria conta se não existir
+          shouldCreateUser: true,
+          emailRedirectTo
         }
       });
       if (error) throw error;
     } catch (error: any) {
-      if (error.status === 504 || error.status === 502) {
+      if (error?.status === 504 || error?.status === 502) {
         throw new Error("O servidor de e-mail está demorando para responder (Timeout). Aguarde 1 minuto e tente novamente.");
+      }
+      const msg = String(error?.message || error || '');
+      if (
+        error?.name === 'TypeError' ||
+        msg.includes('NetworkError') ||
+        msg.includes('Failed to fetch') ||
+        msg.includes('Load failed')
+      ) {
+        throw new Error(
+          'Sem conexão com o Supabase (rede ou URL inválida). Confirme VITE_SUPABASE_URL no .env ou use o app sem variáveis (modo local).'
+        );
       }
       throw error;
     }

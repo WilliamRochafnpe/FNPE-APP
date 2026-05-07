@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Lock, Check, X, ShieldCheck, Eye, EyeOff } from 'lucide-react';
-import { supabaseAuth } from '../../services/auth/supabaseAuth';
+import { auth } from '../../services/auth';
 import { useApp } from '../../App';
 
 interface SetPasswordProps {
@@ -34,9 +34,9 @@ const SetPassword: React.FC<SetPasswordProps> = ({ onSuccess }) => {
         setError('');
 
         try {
-            await supabaseAuth.updatePassword(password);
+            await auth.updatePassword(password);
             if (user) {
-                await supabaseAuth.markPasswordDefined(user.id);
+                await auth.markPasswordDefined(user.id);
                 // Update local state to prevent redirect loops
                 setUser({ ...user, password_defined: true } as any);
             }

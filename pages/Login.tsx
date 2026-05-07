@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabaseAuth } from '../services/auth/supabaseAuth';
 import LoginIdentifier from '../components/auth/LoginIdentifier';
 import LoginOtp from '../components/auth/LoginOtp';
 import LoginPassword from '../components/auth/LoginPassword';
@@ -34,7 +33,7 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0A0C10] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+      <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20"></div>
       <div className="absolute top-0 left-0 w-full h-96 bg-emerald-500/5 blur-[120px] rounded-full"></div>
       <div className="absolute bottom-0 right-0 w-full h-96 bg-indigo-500/5 blur-[120px] rounded-full"></div>
 

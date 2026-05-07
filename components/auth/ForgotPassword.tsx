@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
-import { supabaseAuth } from '../../services/auth/supabaseAuth';
+import { auth, IS_SUPABASE } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 
 interface ForgotPasswordProps {
@@ -22,7 +22,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onCodeSent }) =
         setError('');
 
         try {
-            const user = await supabaseAuth.checkUserStatus(email);
+            const user = await auth.checkUserStatus(email);
             if (user) {
                 // Mask email
                 const parts = email.split('@');
@@ -42,7 +42,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onCodeSent }) =
     const handleSendRecovery = async () => {
         setLoading(true);
         try {
-            await supabase.auth.resetPasswordForEmail(email);
+            if (IS_SUPABASE) {
+                await supabase.auth.resetPasswordForEmail(email);
+            } else {
+                await auth.requestOtp(email);
+            }
             onCodeSent(email);
         } catch (err: any) {
             setError(err.message || 'Erro ao enviar código.');

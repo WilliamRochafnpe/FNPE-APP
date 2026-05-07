@@ -158,7 +158,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
       uf: formData.uf.toUpperCase().trim(),
       cidade: formData.cidade.trim(),
       // Ensure specific ID format if new
-      codigo_certificado: formData.codigo_certificado || `ID Evento - ${countRand}`,
+      codigo_certificado: formData.codigo_certificado || `ID Evento - ${Math.floor(100000 + Math.random() * 900000)}`,
       criado_em: mode === 'create' ? new Date().toISOString() : formData.criado_em,
 
       responsaveis: responsaveisList.map(r => r.nome).join('; '),

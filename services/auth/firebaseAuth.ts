@@ -35,5 +35,17 @@ export const firebaseAuth: AuthService = {
 
   async logout(): Promise<void> {
     throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async updatePassword(_password: string): Promise<void> {
+    throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async markPasswordDefined(_userId: string): Promise<void> {
+    throw new Error("Modo FIREBASE não configurado.");
+  },
+
+  async checkUserStatus(_email: string): Promise<{ id: string; password_defined: boolean; first_login: boolean } | null> {
+    throw new Error("Modo FIREBASE não configurado.");
   }
 };

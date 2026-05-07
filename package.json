@@ -6,6 +6,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
+    "preview:4173": "vite preview --host 127.0.0.1 --port 4173",
     "app:map": "tsx scripts/generate-app-map.ts"
   },
   "dependencies": {
@@ -22,10 +23,12 @@
     "recharts": "^2.15.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
     "@types/node": "^25.0.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.2.4",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.0.0"
