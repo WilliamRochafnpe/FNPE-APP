@@ -8,3 +8,12 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+interface FnpeRuntimeEnv {
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
+}
+
+interface Window {
+  __FNPE_ENV__?: FnpeRuntimeEnv;
+}

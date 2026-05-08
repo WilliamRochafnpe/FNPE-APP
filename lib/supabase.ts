@@ -1,12 +1,28 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const url = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
-const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
+type FnpeRuntimeEnv = { SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string };
+
+const runtimeEnv: FnpeRuntimeEnv =
+  (typeof window !== 'undefined'
+    ? (window as Window & { __FNPE_ENV__?: FnpeRuntimeEnv }).__FNPE_ENV__
+    : undefined) ?? {};
+
+const url = (
+  import.meta.env.VITE_SUPABASE_URL ??
+  runtimeEnv.SUPABASE_URL ??
+  ''
+).trim();
+const anonKey = (
+  import.meta.env.VITE_SUPABASE_ANON_KEY ??
+  runtimeEnv.SUPABASE_ANON_KEY ??
+  ''
+).trim();
 
 /**
- * Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY (JWT anon em Settings → API).
- * Sem variáveis, o app usa auth e dados locais (modo offline).
+ * MODO DE OPERAÇÃO
+ * false = Modo Offline (LocalStorage / Testes internos)
+ * true  = Modo Online (Supabase Real / Produção)
  */
 export const SUPABASE_URL = url;
 export const SUPABASE_ANON_KEY = anonKey;
