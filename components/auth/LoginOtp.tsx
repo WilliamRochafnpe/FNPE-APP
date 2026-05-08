@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { KeyRound, ArrowRight, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { IS_SUPABASE } from '../../services/auth';
+import { isLikelyLocalDevHostname } from '../../lib/runtimeEnv';
 
 interface LoginOtpProps {
     email: string;
@@ -60,6 +61,8 @@ const LoginOtp: React.FC<LoginOtpProps> = ({ email, onSuccess, onBack }) => {
         }
     };
 
+    const hostedWithoutSupabase = !IS_SUPABASE && !isLikelyLocalDevHostname();
+
     const handleResend = async () => {
         if (resendCooldown > 0 || resending) return;
         setError('');
@@ -71,7 +74,9 @@ const LoginOtp: React.FC<LoginOtpProps> = ({ email, onSuccess, onBack }) => {
             setInfo(
                 IS_SUPABASE
                     ? 'Novo código solicitado. Verifique a caixa de entrada, spam e a pasta “Outros” (Outlook/Hotmail).'
-                    : 'Novo código gerado — veja o console do navegador (F12 → aba Console).'
+                    : hostedWithoutSupabase
+                      ? 'O deploy ainda está em modo offline (sem variáveis VITE_* no Netlify). Configure-as e faça um novo deploy para receber código por e-mail.'
+                      : 'Novo código gerado — veja o console do navegador (F12 → aba Console).'
             );
         } catch (err: any) {
             setError(err.message || 'Não foi possível reenviar.');
@@ -99,6 +104,18 @@ const LoginOtp: React.FC<LoginOtpProps> = ({ email, onSuccess, onBack }) => {
                         <li>No painel Supabase: <span className="text-slate-300">Authentication → Users</span> e <span className="text-slate-300">Logs</span> para ver se o envio foi aceito.</li>
                         <li>Para produção, configure <span className="text-slate-300">SMTP próprio</span> em Project Settings → Auth (melhora entrega no Hotmail).</li>
                     </ul>
+                </div>
+            ) : hostedWithoutSupabase ? (
+                <div className="rounded-xl border border-red-500/35 bg-red-950/40 px-4 py-3 text-left text-[11px] leading-relaxed text-red-100/90">
+                    <p className="font-bold text-red-200 mb-2">Produção sem Supabase no build</p>
+                    <p className="mb-2 text-red-100/85">
+                        O site público foi compilado <strong>sem</strong> <span className="font-mono text-[10px]">VITE_SUPABASE_URL</span> e <span className="font-mono text-[10px]">VITE_SUPABASE_ANON_KEY</span>, por isso não há envio de e-mail — só o modo offline de desenvolvimento.
+                    </p>
+                    <ol className="list-decimal pl-4 space-y-1 text-red-100/80">
+                        <li>Na Netlify: <strong>Site configuration → Environment variables</strong> → crie as duas variáveis com os valores do Supabase (<strong>Settings → API</strong>: Project URL e anon/public key).</li>
+                        <li><strong>Deploys → Trigger deploy → Clear cache and deploy site</strong> (obrigatório: o Vite só lê essas variáveis na hora do build).</li>
+                        <li>Depois disso, no Supabase: <strong>Authentication → Providers → Email</strong> ligado; opcionalmente <strong>SMTP customizado</strong> para melhor entrega.</li>
+                    </ol>
                 </div>
             ) : (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[11px] font-bold text-amber-100/90">

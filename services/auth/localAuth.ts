@@ -3,6 +3,7 @@ import { AuthService, AuthProfileData } from './types';
 import { User, DB } from '../../types';
 import { normalizeCpf } from '../../utils/cpf';
 import { loadDB, saveDB } from '../../db';
+import { isLikelyLocalDevHostname } from '../../lib/runtimeEnv';
 
 const OTP_KEY = 'fnpe_otp_store';
 export const LOCAL_PASSWORD_STORAGE_KEY = 'fnpe_local_password_v1';
@@ -31,7 +32,9 @@ export const localAuth: AuthService = {
       attempts: 0
     };
     sessionStorage.setItem(OTP_KEY, JSON.stringify(data));
-    console.log(`[FNPE-DEV] OTP para ${email}: ${code}`);
+    if (isLikelyLocalDevHostname()) {
+      console.log(`[FNPE-DEV] OTP para ${email}: ${code}`);
+    }
     return code;
   },
 
